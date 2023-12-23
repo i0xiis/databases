@@ -21,12 +21,12 @@ async def on_ready():
     client.db = await aiosqlite.connect("warns.db")
     await asyncio.sleep(3)
     async with client.db.cursor() as cursor:
-        await cursor.execute("CREATE TABLE IF NOT EXISTS warns (user INTEGER, reason TEXT, time INTEGER, guild INTEGER)")
+        await cursor.execute("CREATE TABLE IF NOT EXISTS warns (user INTEGER, reason TEXT, time INTEGER, guild INTEGER, moderator INTEGER)")
     await client.db.commit()
 
 async def addwarn(interaction, reason, user):
     async with client.db.cursor() as cursor:
-        await cursor.execute("INSERT INTO warns (user, reason, time, guild) VALUES (?, ?, ?, ?)", (user.id, reason, int(datetime.datetime.now().timestamp()), interaction.guild.id))
+        await cursor.execute("INSERT INTO warns (user, reason, time, guild, moderator) VALUES (?, ?, ?, ?, ?)", (user.id, reason, int(datetime.datetime.now().timestamp()), interaction.guild.id, interaction.user.id))
     await client.db.commit()
 
 @client.tree.command(name = "test", description = "This is a test command")
@@ -78,7 +78,7 @@ async def remove_warn(interaction: discord.Interaction, member: discord.Member):
 @commands.has_permissions(manage_messages = True)
 async def warns(interaction: discord.Interaction, member: discord.Member):
     async with client.db.cursor() as cursor:
-        await cursor.execute("SELECT reason, time FROM warns WHERE user = ? AND guild = ?", (member.id, interaction.guild.id))
+        await cursor.execute("SELECT moderator, reason, time FROM warns WHERE user = ? AND guild = ?", (member.id, interaction.guild.id))
         data = await cursor.fetchall()
         if data:
             embed = discord.Embed(
@@ -92,7 +92,7 @@ async def warns(interaction: discord.Interaction, member: discord.Member):
                 warnnum += 1
                 embed.add_field(
                     name = f"Warning {warnnum}",
-                    value = f"Reason: {table[0]}\nDate issued: <t:{int(table[1])}:F>",
+                    value = f"Moderator: <@{table[0]}>\nReason: {table[1]}\nDate issued: <t:{int(table[2])}:F>",
                 )
             await interaction.response.send_message(embed = embed)
         else:
