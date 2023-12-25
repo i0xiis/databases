@@ -1,109 +1,42 @@
 import discord
 import json
-import aiosqlite
-import asyncio
-import datetime
+import time
 from discord.ext import commands
-from discord import app_commands
+from colorama import Back, Fore, Style
 
-intents = discord.Intents().all()
-client = commands.Bot(command_prefix = commands.when_mentioned_or("~"), intents = intents)
+command_list = ["warn_system.warn",
+                "warn_system.delwarn",
+                "warn_system.warns"]
 
-@client.event
-async def on_ready():
-    print("Bot is online! <3")
-    await client.change_presence(activity = discord.Game("Leave me alone, please I´m just a bot ._."))
+class Client(commands.Bot):
+  def __init__(self):
+    intents = discord.Intents().all()
+    super().__init__(command_prefix = commands.when_mentioned_or("~"), intents = intents)
+    self.command_list = command_list
+    
+  async def setup_hook(self):
+
+    for ext in self.command_list:
+        await self.load_extension(ext)
+
+  async def on_ready(self):
+    cmdprfx = (Back.BLACK + Fore.BLUE + time.strftime("%H:%M:%S UTC+2", time.gmtime(time.time() + 7200)) + Back.RESET + Fore.WHITE + Style.BRIGHT + Back.RESET)
+
+    print(cmdprfx + " Logged in as " + Fore.YELLOW + client.user.name)
+    print(cmdprfx + " Bot ID " + Fore.YELLOW + str(client.user.id))
+    print(cmdprfx + " Discord Version " + Fore.YELLOW + discord.__version__)
     try:
         synced = await client.tree.sync()
-        print(f"Synced {len(synced)} command(s)")
+        print(cmdprfx + " Slash Commands Synced " + Fore.YELLOW + str(len(synced)) + " Commands")
     except Exception as e:
         print(e)
-    client.db = await aiosqlite.connect("warns.db")
-    await asyncio.sleep(3)
-    async with client.db.cursor() as cursor:
-        await cursor.execute("CREATE TABLE IF NOT EXISTS warns (user INTEGER, reason TEXT, time INTEGER, guild INTEGER, moderator INTEGER)")
-    await client.db.commit()
-
-async def addwarn(interaction, reason, user):
-    async with client.db.cursor() as cursor:
-        await cursor.execute("INSERT INTO warns (user, reason, time, guild, moderator) VALUES (?, ?, ?, ?, ?)", (user.id, reason, int(datetime.datetime.now().timestamp()), interaction.guild.id, interaction.user.id))
-    await client.db.commit()
+    await client.change_presence(activity = discord.Game("Leave me alone, please I´m just a bot ._."))
+    
+client = Client()
 
 @client.tree.command(name = "test", description = "This is a test command")
 async def test(interaction: discord.Interaction):
     await interaction.response.send_message(content = "test")
-
-@client.tree.command(name = "warn", description = "Warns a member")
-@commands.has_permissions(manage_messages = True)
-async def warn(interaction: discord.Interaction, member: discord.Member, reason: str):
-    await addwarn(interaction, reason, member)
-
-    embed = discord.Embed(
-        title = "Warn",
-        description = f"Member {member.mention} has been warned.\nReason: *{reason}*",
-        color = discord.Color.red(),
-        timestamp = datetime.datetime.utcnow()
-    )
-    await interaction.response.send_message(embed = embed)
-
-@client.tree.command(name = "remove_warn", description = "Removes a members warning")
-@commands.has_permissions(manage_guild = True)
-async def remove_warn(interaction: discord.Interaction, member: discord.Member):
-    async with client.db.cursor() as cursor:
-        await cursor.execute("SELECT reason FROM warns WHERE user = ? AND guild = ?", (member.id, interaction.guild.id))
-        data = await cursor.fetchone()
-        if data:
-            await cursor.execute("DELETE FROM warns WHERE user = ? AND guild = ?", (member.id, interaction.guild.id))
-
-            embed = discord.Embed(
-            title = "Warn remove",
-            description = f"Member´s {member.mention} warning has been deleted.",
-            color = discord.Color.red(),
-            timestamp = datetime.datetime.utcnow()
-            )
-            await interaction.response.send_message(embed = embed)
-
-        else:
-            embed2 = discord.Embed(
-            title = "Warn remove",
-            description = f"No warnings found!",
-            color = discord.Color.red(),
-            timestamp = datetime.datetime.utcnow()
-            )
-            await interaction.response.send_message(embed = embed2)
-            
-    await client.db.commit()
-
-@client.tree.command(name = "warns", description = "Veiws a members warning")
-@commands.has_permissions(manage_messages = True)
-async def warns(interaction: discord.Interaction, member: discord.Member):
-    async with client.db.cursor() as cursor:
-        await cursor.execute("SELECT moderator, reason, time FROM warns WHERE user = ? AND guild = ?", (member.id, interaction.guild.id))
-        data = await cursor.fetchall()
-        if data:
-            embed = discord.Embed(
-                title = f"{member.name}´s warnings",
-                description = f"Here are all warnings of member {member.mention}",
-                color = discord.Color.blue(),
-                timestamp = datetime.datetime.utcnow()
-            )
-            warnnum = 0
-            for table in data:
-                warnnum += 1
-                embed.add_field(
-                    name = f"Warning {warnnum}",
-                    value = f"Moderator: <@{table[0]}>\nReason: {table[1]}\nDate issued: <t:{int(table[2])}:F>",
-                )
-            await interaction.response.send_message(embed = embed)
-        else:
-            embed2 = discord.Embed(
-                title = f"{member.name}´s warnings",
-                description = f"No warnings found!",
-                color = discord.Color.blue(),
-                timestamp = datetime.datetime.utcnow()
-            )
-            await interaction.response.send_message(embed = embed2)
-    await client.db.commit()
 
 with open("config.json") as file:
     data = json.load(file)
