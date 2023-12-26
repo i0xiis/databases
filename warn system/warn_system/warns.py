@@ -55,7 +55,7 @@ class warns(commands.Cog):
             else:
                 embed2 = discord.Embed(
                     title = f"{member.name}´s warnings",
-                    description = f"No warnings found!",
+                    description = f"User {member.mention} has no warnings!",
                     color = discord.Color.blue(),
                     timestamp = datetime.datetime.utcnow()
                 )
