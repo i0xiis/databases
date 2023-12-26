@@ -62,6 +62,41 @@ class warns(commands.Cog):
                 await interaction.response.send_message(embed = embed2)
         await self.db.commit()
 
+    @warns.error
+    async def on_ban_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        
+        MissingPermissions = discord.Embed(
+            title = "No permisions",
+            color = discord.Color.yellow(),
+            timestamp = datetime.datetime.utcnow()
+        )
+        MissingPermissions.add_field(
+            name = ":shield: - Missing permissions",
+            value = "*You don´t have permissions to use this command!*",
+            inline = False
+        )
+
+        ErrorMessage = discord.Embed(
+            title = "Error",
+            color = discord.Color.yellow(),
+            timestamp = datetime.datetime.utcnow()
+        )
+        ErrorMessage.add_field(
+            name = ":space_invader: - Error",
+            value = error,
+            inline = False
+        )
+        ErrorMessage.add_field(
+            name = ":envelope_with_arrow: - Reporting",
+            value = "*Please go to https://discord.com/channels/1148996773826809936/1157374918929956986 and report this problem.*",
+            inline = False
+        )
+
+        if isinstance(error, discord.app_commands.MissingRole):
+            await interaction.response.send_message(embed = MissingPermissions, ephemeral = True)
+        else:
+            await interaction.response.send_message(embed = ErrorMessage, ephemeral = True)
+
     
 
 async def setup(client: commands.Bot) -> None:
