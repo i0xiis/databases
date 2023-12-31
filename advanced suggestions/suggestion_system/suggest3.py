@@ -34,6 +34,7 @@ class Approve(ui.Modal):
         sugg_id = self.sugg_id.value
         mod_comment = self.mod_comment.value
         s_id = int(sugg_id)
+
         async with aiosqlite.connect("suggestions.db") as db:
             async with db.cursor() as cursor:
                 await cursor.execute("SELECT author, title, suggestion, msg_id, log_id FROM suggestions WHERE id = ? AND guild = ?", (s_id, interaction.guild.id))
@@ -81,11 +82,14 @@ class Approve(ui.Modal):
                     else:
                         pass
                     approve.set_thumbnail(url = yesemojilink)
-                    
+
                     suggestlog = interaction.client.get_channel(approval_channel)
                     log_msg = await suggestlog.fetch_message(log_id)
-                    await log_msg.edit(embed = approve, view = self)
-                
+
+                    new_view = ApprovalSystem(log_msg, log_msg.jump_url, title, author, suggestion)
+                    
+                    await log_msg.edit(embed = approve, view = new_view)
+
                     await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("Approved", interaction.user.id, mod_comment, s_id, interaction.guild.id))
 
                 else:
