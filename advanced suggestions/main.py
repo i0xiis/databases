@@ -4,7 +4,7 @@ import time
 from discord.ext import commands
 from colorama import Back, Fore, Style
 
-command_list = ["suggestion_system.suggest"]
+command_list = ["suggestion_system.suggest3"]
 
 class Client(commands.Bot):
   def __init__(self):

@@ -5,7 +5,12 @@ import asyncio
 from discord.ext import commands
 from discord import app_commands
 
-class delwarn(commands.Cog):
+async def addwarn(self, interaction, reason, user):
+    async with self.db.cursor() as cursor:
+        await cursor.execute("INSERT INTO warns (user, reason, time, guild, moderator) VALUES (?, ?, ?, ?, ?)", (user.id, reason, int(datetime.datetime.now().timestamp()), interaction.guild.id, interaction.user.id))
+    await self.db.commit()
+
+class warns(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
@@ -20,35 +25,44 @@ class delwarn(commands.Cog):
     async def on_ready(self):
         await self.connect_db()
 
-    @app_commands.command(name = "delwarn", description = "Removes a members warning")
+    @app_commands.command(name = "warns", description = "Veiws a members warning")
     @app_commands.checks.has_role(1154457410677788732)
-    async def delwarn(self, interaction: discord.Interaction, id: int):
+    async def warns(self, interaction: discord.Interaction, member: discord.Member):
         async with self.db.cursor() as cursor:
-            await cursor.execute("SELECT user FROM warns WHERE id = ? AND guild = ?", (id, interaction.guild.id))
-            data = await cursor.fetchone()
+            await cursor.execute("SELECT moderator, id, reason, time FROM warns WHERE user = ? AND guild = ?", (member.id, interaction.guild.id))
+            data = await cursor.fetchall()
             if data:
-                await cursor.execute("DELETE FROM warns WHERE id = ? AND guild = ?", (id, interaction.guild.id))
-
                 embed = discord.Embed(
-                title = "Warn remove",
-                description = f"Member´s <@{data[0]}> warning has been deleted.",
-                color = discord.Color.red(),
-                timestamp = datetime.datetime.utcnow()
-                )
-                await interaction.response.send_message(embed = embed)
+                    title = f"{member.name}´s warnings",
+                    description = f"Here are all warnings of member {member.mention}",
+                    color = discord.Color.blue(),
+                    timestamp = datetime.datetime.utcnow()
+                )         
+                warnnum = 0
+                for table in data:
+                    warnnum += 1
 
+                    moderator = table[0]
+                    warnid = table[1]
+                    reason = table[2]
+                    date = int(table[3])
+
+                    embed.add_field(
+                        name = f"Warning {warnnum}",
+                        value = f"Moderator: <@{moderator}>\nID: ```{warnid}```\nReason: {reason}\nDate issued: <t:{date}:F>",
+                    )
+                await interaction.response.send_message(embed = embed)
             else:
                 embed2 = discord.Embed(
-                title = "Warn remove",
-                description = f"ID **`{id}`** not found!",
-                color = discord.Color.red(),
-                timestamp = datetime.datetime.utcnow()
+                    title = f"{member.name}´s warnings",
+                    description = f"User {member.mention} has no warnings!",
+                    color = discord.Color.blue(),
+                    timestamp = datetime.datetime.utcnow()
                 )
-                await interaction.response.send_message(embed = embed2)
-                
+                await interaction.response.send_message(embed = embed2, ephemeral = True)
         await self.db.commit()
-    
-    @delwarn.error
+
+    @warns.error
     async def on_ban_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         
         MissingPermissions = discord.Embed(
@@ -86,4 +100,4 @@ class delwarn(commands.Cog):
     
 
 async def setup(client: commands.Bot) -> None:
-   await client.add_cog(delwarn(client))
+   await client.add_cog(warns(client))
