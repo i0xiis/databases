@@ -53,7 +53,7 @@ class Approve(ui.Modal):
                         timestamp = datetime.datetime.utcnow()
                     )
                     approve.add_field(
-                        name = ":id: - Name of suggetion:",
+                        name = ":id: - Suggestion ID:",
                         value = f"```{s_id}```",
                         inline = False
                     )
@@ -77,7 +77,7 @@ class Approve(ui.Modal):
                             name = f":speech_balloon: - Mod comment:",
                             value = mod_comment,
                             inline = False
-                    )
+                        )
                     else:
                         pass
                     approve.set_thumbnail(url = yesemojilink)
