@@ -74,9 +74,9 @@ class Approve(ui.Modal):
                     )
                     if mod_comment != None:
                         approve.add_field(
-                        name = f":speech_balloon: - Mod comment:",
-                        value = mod_comment,
-                        inline = False
+                            name = f":speech_balloon: - Mod comment:",
+                            value = mod_comment,
+                            inline = False
                     )
                     else:
                         pass
@@ -97,7 +97,7 @@ class Approve(ui.Modal):
                     )
                     await interaction.response.send_message(embed = embed, ephemeral = True)
 
-            await db.commit()
+                await db.commit()
 
 class ApprovalSystem(discord.ui.View):
     def __init__(self, suggmsg, url, title, author, suggestion):
