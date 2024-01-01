@@ -4,6 +4,8 @@ import time
 from discord.ext import commands
 from colorama import Back, Fore, Style
 
+from suggestion_system.suggest3 import ApprovalSystem
+
 command_list = ["suggestion_system.suggest3"]
 
 class Client(commands.Bot):
@@ -13,6 +15,7 @@ class Client(commands.Bot):
     self.command_list = command_list
     
   async def setup_hook(self):
+    self.add_view(ApprovalSystem(self))
 
     for ext in self.command_list:
         await self.load_extension(ext)

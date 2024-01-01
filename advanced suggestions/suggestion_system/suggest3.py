@@ -426,9 +426,10 @@ class Delete(ui.Modal):
             await db.commit()
 
 class ApprovalSystem(discord.ui.View):
-    def __init__(self):
+    def __init__(self, url):
+        self.url = url
         super().__init__(timeout = None)
-        self.add_item(Button(label = "Jump to suggestion", style = discord.ButtonStyle.gray, url = None))
+        self.add_item(Button(label = "Jump to suggestion", style = discord.ButtonStyle.gray, url = self.url))
 
     @discord.ui.button(label = "Approve", style = discord.ButtonStyle.green, emoji = yesemoji, custom_id = "approve")
     async def Approve(self, interaction: discord.Interaction, button: discord.Button):
@@ -541,7 +542,7 @@ class suggest(commands.Cog):
                 )
                 approval.set_thumbnail(url = wingman_siplink)
 
-                logmsg = await suggestlog.send(embed = approval, view = ApprovalSystem())
+                logmsg = await suggestlog.send(embed = approval, view = ApprovalSystem(suggmsg.jump_url))
 
                 await cursor.execute("UPDATE suggestions SET log_id = ? WHERE id = ? AND guild = ?", (logmsg.id, s_id, interaction.guild.id))
             else:
