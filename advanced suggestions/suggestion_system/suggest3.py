@@ -91,10 +91,8 @@ class Approve(ui.Modal):
 
                     suggestlog = interaction.client.get_channel(approval_channel)
                     log_msg = await suggestlog.fetch_message(log_id)
-
-                    view = ApprovalSystem()
                     
-                    await log_msg.edit(embed = approve, view = view)
+                    await log_msg.edit(embed = approve)
 
                     await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("Approved", interaction.user.id, mod_comment, s_id, interaction.guild.id))
 
@@ -179,6 +177,7 @@ class ApprovalSystem(discord.ui.View):
         # self.Delete.disabled = True
 
         await interaction.response.send_modal(Approve())
+        await interaction.message.edit(view=self)
 
         # approve = discord.Embed(
         #     title = "Suggestion log",
@@ -352,6 +351,8 @@ class suggest(commands.Cog):
 
         await interaction.response.send_message(content = f"Suggestion called **{title}** has been posted!")
 
+            #* Suggestion message #
+
         suggEmbed = discord.Embed(
             title = "Suggestion",
             description = f"*Here is a suggestion from user {author.mention}:*",
@@ -374,31 +375,46 @@ class suggest(commands.Cog):
         await suggmsg.add_reaction(yesemoji)
         await suggmsg.add_reaction(noemoji)
 
-
-        approval = discord.Embed(
-            title = "Suggestion log",
-            description = f"Suggestion log of {author.mention}",
-            color = discord.Color.yellow(),
-            timestamp = datetime.datetime.utcnow()
-        )
-        approval.add_field(
-            name = ":pencil: - Name of suggetion:",
-            value = title,
-            inline = False
-        )
-        approval.add_field(
-            name = ":bulb: - Suggestion:",
-            value = suggestion,
-            inline = False
-        )
-        approval.set_thumbnail(url = wingman_siplink)
-
-        logmsg = await suggestlog.send(embed = approval, view = ApprovalSystem())
+        async with self.db.cursor() as cursor:
+            await cursor.execute("INSERT INTO suggestions (author, title, suggestion, status, msg_id, guild) VALUES (?, ?, ?, ?, ?, ?)", (author.id, title, suggestion, "Waiting..", suggmsg.id, interaction.guild.id))
+        await self.db.commit()
 
         async with self.db.cursor() as cursor:
-            await cursor.execute("INSERT INTO suggestions (author, title, suggestion, status, msg_id, log_id, guild) VALUES (?, ?, ?, ?, ?, ?, ?)", (author.id, title, suggestion, "Waiting..", suggmsg.id, logmsg.id, interaction.guild.id))
-        await self.db.commit()
-    
+            await cursor.execute("SELECT id FROM suggestions WHERE msg_id = ? AND guild = ?", (suggmsg.id, interaction.guild.id))
+            data = await cursor.fetchone()
+            if data:
+                s_id = data[0]
+
+                approval = discord.Embed(
+                    title = "Suggestion log",
+                    description = f"Suggestion log of {author.mention}",
+                    color = discord.Color.yellow(),
+                    timestamp = datetime.datetime.utcnow()
+                )
+                approval.add_field(
+                    name = ":id: - Suggestion ID:",
+                    value = f"```{s_id}```",
+                    inline = False
+                )
+                approval.add_field(
+                    name = ":pencil: - Name of suggetion:",
+                    value = title,
+                    inline = False
+                )
+                approval.add_field(
+                    name = ":bulb: - Suggestion:",
+                    value = suggestion,
+                    inline = False
+                )
+                approval.set_thumbnail(url = wingman_siplink)
+
+                logmsg = await suggestlog.send(embed = approval, view = ApprovalSystem())
+
+                await cursor.execute("UPDATE suggestions SET log_id = ? WHERE id = ? AND guild = ?", (logmsg.id, s_id, interaction.guild.id))
+            else:
+                return
+            await self.db.commit()
+
     @suggest.error
     async def on_suggest_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         
