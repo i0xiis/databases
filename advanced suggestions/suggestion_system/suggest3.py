@@ -47,6 +47,51 @@ class Approve(ui.Modal):
                     msg_id = data[3]
                     log_id = data[4]
 
+                        #* Suggestion messaage #
+
+                    approvedSuggmsg = discord.Embed(
+                        title = "Approved suggestion!",
+                        description = f"*Here is the **approved** suggestion from user <@{author}>:*",
+                        color = discord.Color.dark_green(),
+                        timestamp = datetime.datetime.utcnow()
+                    )
+                    approvedSuggmsg.add_field(
+                        name = ":pencil: - Name of suggetion:",
+                        value = title,
+                        inline = False
+                    )
+                    approvedSuggmsg.add_field(
+                        name = ":bulb: - Suggestion:",
+                        value = suggestion,
+                        inline = False
+                    )
+                    approvedSuggmsg.add_field(
+                        name = f"{yesemoji} - Approved:",
+                        value = f"This suggestion has been approved by {interaction.user.mention}!",
+                        inline = False
+                    )
+                    if mod_comment:
+                        approvedSuggmsg.add_field(
+                            name = f":speech_balloon: - Mod comment:",
+                            value = mod_comment,
+                            inline = False
+                        )
+                    else:
+                        approvedSuggmsg.add_field(
+                            name = f":speech_balloon: - Mod comment:",
+                            value = "-",
+                            inline = False
+                        )
+                    approvedSuggmsg.set_thumbnail(url = yesemojilink)
+
+                    suggestmsg = interaction.client.get_channel(suggest_channel)
+                    sugg_msg = await suggestmsg.fetch_message(msg_id)
+
+                    await sugg_msg.edit(embed = approvedSuggmsg)
+
+                    await sugg_msg.clear_reactions()
+                    await sugg_msg.add_reaction(wingman_love)
+
                         #* Log message #
 
                     approve = discord.Embed(
@@ -92,54 +137,9 @@ class Approve(ui.Modal):
                     suggestlog = interaction.client.get_channel(approval_channel)
                     log_msg = await suggestlog.fetch_message(log_id)
                     
-                    await log_msg.edit(embed = approve)
+                    await log_msg.edit(embed = approve, view = ApprovalSystemDisabled(sugg_msg.jump_url))
 
                     await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("Approved", interaction.user.id, mod_comment, s_id, interaction.guild.id))
-
-                        #* Suggestion messaage #
-
-                    approvedSuggmsg = discord.Embed(
-                        title = "Approved suggestion!",
-                        description = f"*Here is the **approved** suggestion from user <@{author}>:*",
-                        color = discord.Color.dark_green(),
-                        timestamp = datetime.datetime.utcnow()
-                    )
-                    approvedSuggmsg.add_field(
-                        name = ":pencil: - Name of suggetion:",
-                        value = title,
-                        inline = False
-                    )
-                    approvedSuggmsg.add_field(
-                        name = ":bulb: - Suggestion:",
-                        value = suggestion,
-                        inline = False
-                    )
-                    approvedSuggmsg.add_field(
-                        name = f"{yesemoji} - Approved:",
-                        value = f"This suggestion has been approved by {interaction.user.mention}!",
-                        inline = False
-                    )
-                    if mod_comment:
-                        approvedSuggmsg.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = mod_comment,
-                            inline = False
-                        )
-                    else:
-                        approvedSuggmsg.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = "-",
-                            inline = False
-                        )
-                    approvedSuggmsg.set_thumbnail(url = yesemojilink)
-
-                    suggestmsg = interaction.client.get_channel(suggest_channel)
-                    sugg_msg = await suggestmsg.fetch_message(msg_id)
-
-                    await sugg_msg.edit(embed = approvedSuggmsg)
-
-                    await sugg_msg.clear_reactions()
-                    await sugg_msg.add_reaction(wingman_love)
 
                         #* Confirm message #
                     
@@ -195,55 +195,6 @@ class Deny(ui.Modal):
                     msg_id = data[3]
                     log_id = data[4]
 
-                        #* Log message #
-
-                    deny = discord.Embed(
-                        title = "Suggestion log",
-                        description = f"Suggestion log of <@{author}>",
-                        color = discord.Color.red(),
-                        timestamp = datetime.datetime.utcnow()
-                    )
-                    deny.add_field(
-                        name = ":id: - Suggestion ID:",
-                        value = f"```{s_id}```",
-                        inline = False
-                    )
-                    deny.add_field(
-                        name = ":pencil: - Name of suggetion:",
-                        value = title,
-                        inline = False
-                    )
-                    deny.add_field(
-                        name = ":bulb: - Suggestion:",
-                        value = suggestion,
-                        inline = False
-                    )
-                    deny.add_field(
-                        name = f"{noemoji} - Denied:",
-                        value = f"This suggestion has been denied by {interaction.user.mention}!",
-                        inline = False
-                    )
-                    if mod_comment:
-                        deny.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = mod_comment,
-                            inline = False
-                        )
-                    else:
-                        deny.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = "-",
-                            inline = False
-                        )
-                    deny.set_thumbnail(url = noemojilink)
-
-                    suggestlog = interaction.client.get_channel(approval_channel)
-                    log_msg = await suggestlog.fetch_message(log_id)
-                    
-                    await log_msg.edit(embed = deny)
-
-                    await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("Denied", interaction.user.id, mod_comment, s_id, interaction.guild.id))
-
                         #* Suggestion messaage #
 
                     deniedSuggmsg = discord.Embed(
@@ -289,6 +240,55 @@ class Deny(ui.Modal):
                     await sugg_msg.clear_reactions()
                     await sugg_msg.add_reaction(wingman_sad)
 
+                        #* Log message #
+
+                    deny = discord.Embed(
+                        title = "Suggestion log",
+                        description = f"Suggestion log of <@{author}>",
+                        color = discord.Color.red(),
+                        timestamp = datetime.datetime.utcnow()
+                    )
+                    deny.add_field(
+                        name = ":id: - Suggestion ID:",
+                        value = f"```{s_id}```",
+                        inline = False
+                    )
+                    deny.add_field(
+                        name = ":pencil: - Name of suggetion:",
+                        value = title,
+                        inline = False
+                    )
+                    deny.add_field(
+                        name = ":bulb: - Suggestion:",
+                        value = suggestion,
+                        inline = False
+                    )
+                    deny.add_field(
+                        name = f"{noemoji} - Denied:",
+                        value = f"This suggestion has been denied by {interaction.user.mention}!",
+                        inline = False
+                    )
+                    if mod_comment:
+                        deny.add_field(
+                            name = f":speech_balloon: - Mod comment:",
+                            value = mod_comment,
+                            inline = False
+                        )
+                    else:
+                        deny.add_field(
+                            name = f":speech_balloon: - Mod comment:",
+                            value = "-",
+                            inline = False
+                        )
+                    deny.set_thumbnail(url = noemojilink)
+
+                    suggestlog = interaction.client.get_channel(approval_channel)
+                    log_msg = await suggestlog.fetch_message(log_id)
+                    
+                    await log_msg.edit(embed = deny, view = ApprovalSystemDisabled(sugg_msg.jump_url))
+
+                    await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("Denied", interaction.user.id, mod_comment, s_id, interaction.guild.id))
+
                         #* Confirm message #
                     
                     embed = discord.Embed(
@@ -305,7 +305,7 @@ class Deny(ui.Modal):
                         #* ID not found #
                     
                     embed = discord.Embed(
-                        title = f"Suggestion approve",
+                        title = f"Suggestion deny",
                         description = f"ID {s_id} not found..",
                         color = discord.Color.red(),
                         timestamp = datetime.datetime.utcnow()
@@ -342,6 +342,13 @@ class Delete(ui.Modal):
                     suggestion = data[2]
                     msg_id = data[3]
                     log_id = data[4]
+
+                        #* Suggestion messaage #
+
+                    suggestmsg = interaction.client.get_channel(suggest_channel)
+                    sugg_msg = await suggestmsg.fetch_message(msg_id)
+
+                    await sugg_msg.delete()
 
                         #* Log message #
 
@@ -388,16 +395,9 @@ class Delete(ui.Modal):
                     suggestlog = interaction.client.get_channel(approval_channel)
                     log_msg = await suggestlog.fetch_message(log_id)
                     
-                    await log_msg.edit(embed = delete)
+                    await log_msg.edit(embed = delete, view = ApprovalSystemDisabled(sugg_msg.jump_url))
 
                     await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("Deleted", interaction.user.id, mod_comment, s_id, interaction.guild.id))
-
-                        #* Suggestion messaage #
-
-                    suggestmsg = interaction.client.get_channel(suggest_channel)
-                    sugg_msg = await suggestmsg.fetch_message(msg_id)
-
-                    await sugg_msg.delete()
 
                         #* Confirm message #
                     
@@ -415,7 +415,7 @@ class Delete(ui.Modal):
                         #* ID not found #
                     
                     embed = discord.Embed(
-                        title = f"Suggestion approve",
+                        title = f"Suggestion delete",
                         description = f"ID {s_id} not found..",
                         color = discord.Color.red(),
                         timestamp = datetime.datetime.utcnow()
@@ -424,6 +424,15 @@ class Delete(ui.Modal):
                     await interaction.response.send_message(embed = embed, ephemeral = True)
 
             await db.commit()
+
+class ApprovalSystemDisabled(discord.ui.View):
+    def __init__(self, url):
+        self.url = url
+        super().__init__(timeout = None)
+        self.add_item(Button(label = "Approve", style = discord.ButtonStyle.green, emoji = yesemoji, disabled = True))
+        self.add_item(Button(label = "Deny", style = discord.ButtonStyle.red, emoji = noemoji, disabled = True))
+        self.add_item(Button(label = "Delete", style = discord.ButtonStyle.red, emoji = trashcanemoji, disabled = True))
+        self.add_item(Button(label = "Jump to suggestion", style = discord.ButtonStyle.gray, url = self.url))
 
 class ApprovalSystem(discord.ui.View):
     def __init__(self, url):
@@ -439,7 +448,6 @@ class ApprovalSystem(discord.ui.View):
         self.Delete.disabled = True
 
         await interaction.response.send_modal(Approve())
-        await interaction.message.edit(view = self)
 
     @discord.ui.button(label = "Deny", style = discord.ButtonStyle.red, emoji = noemoji, custom_id = "deny")
     async def Deny(self, interaction: discord.Interaction, Button: discord.Button):
@@ -449,7 +457,6 @@ class ApprovalSystem(discord.ui.View):
         self.Delete.disabled = True
 
         await interaction.response.send_modal(Deny())
-        await interaction.message.edit(view = self)
 
     @discord.ui.button(label = "Delete", style = discord.ButtonStyle.red, emoji = trashcanemoji, custom_id = "delete")
     async def Delete(self, interaction: discord.Interaction, Button: discord.Button):
@@ -459,7 +466,6 @@ class ApprovalSystem(discord.ui.View):
         self.Delete.disabled = True
 
         await interaction.response.send_modal(Delete())
-        await interaction.message.edit(view = self)
 
 class suggest(commands.Cog):
     def __init__(self, client: commands.Bot):
