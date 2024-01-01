@@ -4,7 +4,7 @@ import time
 from discord.ext import commands
 from colorama import Back, Fore, Style
 
-from suggestion_system.suggest import ApprovalSystem
+from suggestion_system.views.approval_system import ApprovalSystem
 
 command_list = ["suggestion_system.suggest"]
 
