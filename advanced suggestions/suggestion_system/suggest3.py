@@ -37,7 +37,7 @@ class Approve(ui.Modal):
 
         async with aiosqlite.connect("suggestions.db") as db:
             async with db.cursor() as cursor:
-                await cursor.execute("SELECT author, title, suggestion, msg_id, log_id FROM suggestions WHERE id = ? AND guild = ?", (s_id, interaction.guild.id))
+                await cursor.execute("SELECT author, title, suggestion, msg_id, log_id, status FROM suggestions WHERE id = ? AND guild = ?", (s_id, interaction.guild.id))
                 data = await cursor.fetchone()
                 if data:
 
@@ -46,111 +46,126 @@ class Approve(ui.Modal):
                     suggestion = data[2]
                     msg_id = data[3]
                     log_id = data[4]
+                    status = data[5]
 
-                        #* Suggestion messaage #
+                    if status == "waiting":
 
-                    approvedSuggmsg = discord.Embed(
-                        title = "Approved suggestion!",
-                        description = f"*Here is the **approved** suggestion from user <@{author}>:*",
-                        color = discord.Color.dark_green(),
-                        timestamp = datetime.datetime.utcnow()
-                    )
-                    approvedSuggmsg.add_field(
-                        name = ":pencil: - Name of suggetion:",
-                        value = title,
-                        inline = False
-                    )
-                    approvedSuggmsg.add_field(
-                        name = ":bulb: - Suggestion:",
-                        value = suggestion,
-                        inline = False
-                    )
-                    approvedSuggmsg.add_field(
-                        name = f"{yesemoji} - Approved:",
-                        value = f"This suggestion has been approved by {interaction.user.mention}!",
-                        inline = False
-                    )
-                    if mod_comment:
+                            #* Suggestion messaage #
+
+                        approvedSuggmsg = discord.Embed(
+                            title = "Approved suggestion!",
+                            description = f"*Here is the **approved** suggestion from user <@{author}>:*",
+                            color = discord.Color.dark_green(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
                         approvedSuggmsg.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = mod_comment,
+                            name = ":pencil: - Name of suggetion:",
+                            value = title,
                             inline = False
                         )
-                    else:
                         approvedSuggmsg.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = "-",
+                            name = ":bulb: - Suggestion:",
+                            value = suggestion,
                             inline = False
                         )
-                    approvedSuggmsg.set_thumbnail(url = yesemojilink)
+                        approvedSuggmsg.add_field(
+                            name = f"{yesemoji} - Approved:",
+                            value = f"This suggestion has been approved by {interaction.user.mention}!",
+                            inline = False
+                        )
+                        if mod_comment:
+                            approvedSuggmsg.add_field(
+                                name = f":speech_balloon: - Mod comment:",
+                                value = mod_comment,
+                                inline = False
+                            )
+                        else:
+                            approvedSuggmsg.add_field(
+                                name = f":speech_balloon: - Mod comment:",
+                                value = "-",
+                                inline = False
+                            )
+                        approvedSuggmsg.set_thumbnail(url = yesemojilink)
 
-                    suggestmsg = interaction.client.get_channel(suggest_channel)
-                    sugg_msg = await suggestmsg.fetch_message(msg_id)
+                        suggestmsg = interaction.client.get_channel(suggest_channel)
+                        sugg_msg = await suggestmsg.fetch_message(msg_id)
 
-                    await sugg_msg.edit(embed = approvedSuggmsg)
+                        await sugg_msg.edit(embed = approvedSuggmsg)
 
-                    await sugg_msg.clear_reactions()
-                    await sugg_msg.add_reaction(wingman_love)
+                        await sugg_msg.clear_reactions()
+                        await sugg_msg.add_reaction(wingman_love)
 
-                        #* Log message #
+                            #* Log message #
 
-                    approve = discord.Embed(
-                        title = "Suggestion log",
-                        description = f"Suggestion log of <@{author}>",
-                        color = discord.Color.dark_green(),
-                        timestamp = datetime.datetime.utcnow()
-                    )
-                    approve.add_field(
-                        name = ":id: - Suggestion ID:",
-                        value = f"```{s_id}```",
-                        inline = False
-                    )
-                    approve.add_field(
-                        name = ":pencil: - Name of suggetion:",
-                        value = title,
-                        inline = False
-                    )
-                    approve.add_field(
-                        name = ":bulb: - Suggestion:",
-                        value = suggestion,
-                        inline = False
-                    )
-                    approve.add_field(
-                        name = f"{yesemoji} - Approved:",
-                        value = f"This suggestion has been approved by {interaction.user.mention}!",
-                        inline = False
-                    )
-                    if mod_comment:
+                        approve = discord.Embed(
+                            title = "Suggestion log",
+                            description = f"Suggestion log of <@{author}>",
+                            color = discord.Color.dark_green(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
                         approve.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = mod_comment,
+                            name = ":id: - Suggestion ID:",
+                            value = f"```{s_id}```",
                             inline = False
                         )
+                        approve.add_field(
+                            name = ":pencil: - Name of suggetion:",
+                            value = title,
+                            inline = False
+                        )
+                        approve.add_field(
+                            name = ":bulb: - Suggestion:",
+                            value = suggestion,
+                            inline = False
+                        )
+                        approve.add_field(
+                            name = f"{yesemoji} - Approved:",
+                            value = f"This suggestion has been approved by {interaction.user.mention}!",
+                            inline = False
+                        )
+                        if mod_comment:
+                            approve.add_field(
+                                name = f":speech_balloon: - Mod comment:",
+                                value = mod_comment,
+                                inline = False
+                            )
+                        else:
+                            approve.add_field(
+                                name = f":speech_balloon: - Mod comment:",
+                                value = "-",
+                                inline = False
+                            )
+                        approve.set_thumbnail(url = yesemojilink)
+
+                        suggestlog = interaction.client.get_channel(approval_channel)
+                        log_msg = await suggestlog.fetch_message(log_id)
+                        
+                        await log_msg.edit(embed = approve, view = ApprovalSystemDisabled(sugg_msg.jump_url))
+
+                        await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("approved", interaction.user.id, mod_comment, s_id, interaction.guild.id))
+
+                            #* Confirm message #
+                        
+                        embed = discord.Embed(
+                            title = f"Suggestion approved!",
+                            description = f"Suggestion with ID {s_id} has been approved.",
+                            color = discord.Color.dark_green(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
+                        embed.set_thumbnail(url = yesemojilink)
+                        await interaction.response.send_message(embed = embed, ephemeral = True)
+
+                        #* Already approved/denied/deleted #
+
                     else:
-                        approve.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = "-",
-                            inline = False
+                        embed = discord.Embed(
+                            title = f"Suggestion approve",
+                            description = f"Cannot approve suggestion **{s_id}**, suggestion is already {status}.",
+                            color = discord.Color.red(),
+                            timestamp = datetime.datetime.utcnow()
                         )
-                    approve.set_thumbnail(url = yesemojilink)
-
-                    suggestlog = interaction.client.get_channel(approval_channel)
-                    log_msg = await suggestlog.fetch_message(log_id)
-                    
-                    await log_msg.edit(embed = approve, view = ApprovalSystemDisabled(sugg_msg.jump_url))
-
-                    await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("Approved", interaction.user.id, mod_comment, s_id, interaction.guild.id))
-
-                        #* Confirm message #
-                    
-                    embed = discord.Embed(
-                        title = f"Suggestion approved!",
-                        description = f"Suggestion with ID {s_id} has been approved.",
-                        color = discord.Color.dark_green(),
-                        timestamp = datetime.datetime.utcnow()
-                    )
-                    embed.set_thumbnail(url = yesemojilink)
-                    await interaction.response.send_message(embed = embed, ephemeral = True)
+                        embed.set_thumbnail(url = noemojilink)
+                        await interaction.response.send_message(embed = embed, ephemeral = True)
 
                 else:
 
@@ -185,7 +200,7 @@ class Deny(ui.Modal):
 
         async with aiosqlite.connect("suggestions.db") as db:
             async with db.cursor() as cursor:
-                await cursor.execute("SELECT author, title, suggestion, msg_id, log_id FROM suggestions WHERE id = ? AND guild = ?", (s_id, interaction.guild.id))
+                await cursor.execute("SELECT author, title, suggestion, msg_id, log_id, status FROM suggestions WHERE id = ? AND guild = ?", (s_id, interaction.guild.id))
                 data = await cursor.fetchone()
                 if data:
 
@@ -194,111 +209,126 @@ class Deny(ui.Modal):
                     suggestion = data[2]
                     msg_id = data[3]
                     log_id = data[4]
+                    status = data[5]
 
-                        #* Suggestion messaage #
+                    if status == "waiting":
 
-                    deniedSuggmsg = discord.Embed(
-                        title = "Denied suggestion!",
-                        description = f"*Here is the **denied** suggestion from user <@{author}>:*",
-                        color = discord.Color.red(),
-                        timestamp = datetime.datetime.utcnow()
-                    )
-                    deniedSuggmsg.add_field(
-                        name = ":pencil: - Name of suggetion:",
-                        value = title,
-                        inline = False
-                    )
-                    deniedSuggmsg.add_field(
-                        name = ":bulb: - Suggestion:",
-                        value = suggestion,
-                        inline = False
-                    )
-                    deniedSuggmsg.add_field(
-                        name = f"{yesemoji} - Denied:",
-                        value = f"This suggestion has been denied by {interaction.user.mention}!",
-                        inline = False
-                    )
-                    if mod_comment:
+                            #* Suggestion messaage #
+
+                        deniedSuggmsg = discord.Embed(
+                            title = "Denied suggestion!",
+                            description = f"*Here is the **denied** suggestion from user <@{author}>:*",
+                            color = discord.Color.red(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
                         deniedSuggmsg.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = mod_comment,
+                            name = ":pencil: - Name of suggetion:",
+                            value = title,
                             inline = False
                         )
-                    else:
                         deniedSuggmsg.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = "-",
+                            name = ":bulb: - Suggestion:",
+                            value = suggestion,
                             inline = False
                         )
-                    deniedSuggmsg.set_thumbnail(url = noemojilink)
+                        deniedSuggmsg.add_field(
+                            name = f"{yesemoji} - Denied:",
+                            value = f"This suggestion has been denied by {interaction.user.mention}!",
+                            inline = False
+                        )
+                        if mod_comment:
+                            deniedSuggmsg.add_field(
+                                name = f":speech_balloon: - Mod comment:",
+                                value = mod_comment,
+                                inline = False
+                            )
+                        else:
+                            deniedSuggmsg.add_field(
+                                name = f":speech_balloon: - Mod comment:",
+                                value = "-",
+                                inline = False
+                            )
+                        deniedSuggmsg.set_thumbnail(url = noemojilink)
 
-                    suggestmsg = interaction.client.get_channel(suggest_channel)
-                    sugg_msg = await suggestmsg.fetch_message(msg_id)
+                        suggestmsg = interaction.client.get_channel(suggest_channel)
+                        sugg_msg = await suggestmsg.fetch_message(msg_id)
 
-                    await sugg_msg.edit(embed = deniedSuggmsg)
+                        await sugg_msg.edit(embed = deniedSuggmsg)
 
-                    await sugg_msg.clear_reactions()
-                    await sugg_msg.add_reaction(wingman_sad)
+                        await sugg_msg.clear_reactions()
+                        await sugg_msg.add_reaction(wingman_sad)
 
-                        #* Log message #
+                            #* Log message #
 
-                    deny = discord.Embed(
-                        title = "Suggestion log",
-                        description = f"Suggestion log of <@{author}>",
-                        color = discord.Color.red(),
-                        timestamp = datetime.datetime.utcnow()
-                    )
-                    deny.add_field(
-                        name = ":id: - Suggestion ID:",
-                        value = f"```{s_id}```",
-                        inline = False
-                    )
-                    deny.add_field(
-                        name = ":pencil: - Name of suggetion:",
-                        value = title,
-                        inline = False
-                    )
-                    deny.add_field(
-                        name = ":bulb: - Suggestion:",
-                        value = suggestion,
-                        inline = False
-                    )
-                    deny.add_field(
-                        name = f"{noemoji} - Denied:",
-                        value = f"This suggestion has been denied by {interaction.user.mention}!",
-                        inline = False
-                    )
-                    if mod_comment:
+                        deny = discord.Embed(
+                            title = "Suggestion log",
+                            description = f"Suggestion log of <@{author}>",
+                            color = discord.Color.red(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
                         deny.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = mod_comment,
+                            name = ":id: - Suggestion ID:",
+                            value = f"```{s_id}```",
                             inline = False
                         )
+                        deny.add_field(
+                            name = ":pencil: - Name of suggetion:",
+                            value = title,
+                            inline = False
+                        )
+                        deny.add_field(
+                            name = ":bulb: - Suggestion:",
+                            value = suggestion,
+                            inline = False
+                        )
+                        deny.add_field(
+                            name = f"{noemoji} - Denied:",
+                            value = f"This suggestion has been denied by {interaction.user.mention}!",
+                            inline = False
+                        )
+                        if mod_comment:
+                            deny.add_field(
+                                name = f":speech_balloon: - Mod comment:",
+                                value = mod_comment,
+                                inline = False
+                            )
+                        else:
+                            deny.add_field(
+                                name = f":speech_balloon: - Mod comment:",
+                                value = "-",
+                                inline = False
+                            )
+                        deny.set_thumbnail(url = noemojilink)
+
+                        suggestlog = interaction.client.get_channel(approval_channel)
+                        log_msg = await suggestlog.fetch_message(log_id)
+                        
+                        await log_msg.edit(embed = deny, view = ApprovalSystemDisabled(sugg_msg.jump_url))
+
+                        await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("denied", interaction.user.id, mod_comment, s_id, interaction.guild.id))
+
+                            #* Confirm message #
+                        
+                        embed = discord.Embed(
+                            title = f"Suggestion denied!",
+                            description = f"Suggestion with ID {s_id} has been denied.",
+                            color = discord.Color.red(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
+                        embed.set_thumbnail(url = yesemojilink)
+                        await interaction.response.send_message(embed = embed, ephemeral = True)
+
+                        #* Already approved/denied/deleted #
+                    
                     else:
-                        deny.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = "-",
-                            inline = False
+                        embed = discord.Embed(
+                            title = f"Suggestion deny",
+                            description = f"Cannot deny suggestion **{s_id}**, suggestion is already {status}.",
+                            color = discord.Color.red(),
+                            timestamp = datetime.datetime.utcnow()
                         )
-                    deny.set_thumbnail(url = noemojilink)
-
-                    suggestlog = interaction.client.get_channel(approval_channel)
-                    log_msg = await suggestlog.fetch_message(log_id)
-                    
-                    await log_msg.edit(embed = deny, view = ApprovalSystemDisabled(sugg_msg.jump_url))
-
-                    await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("Denied", interaction.user.id, mod_comment, s_id, interaction.guild.id))
-
-                        #* Confirm message #
-                    
-                    embed = discord.Embed(
-                        title = f"Suggestion denied!",
-                        description = f"Suggestion with ID {s_id} has been denied.",
-                        color = discord.Color.red(),
-                        timestamp = datetime.datetime.utcnow()
-                    )
-                    embed.set_thumbnail(url = yesemojilink)
-                    await interaction.response.send_message(embed = embed, ephemeral = True)
+                        embed.set_thumbnail(url = noemojilink)
+                        await interaction.response.send_message(embed = embed, ephemeral = True)
 
                 else:
 
@@ -333,7 +363,7 @@ class Delete(ui.Modal):
 
         async with aiosqlite.connect("suggestions.db") as db:
             async with db.cursor() as cursor:
-                await cursor.execute("SELECT author, title, suggestion, msg_id, log_id FROM suggestions WHERE id = ? AND guild = ?", (s_id, interaction.guild.id))
+                await cursor.execute("SELECT author, title, suggestion, msg_id, log_id, status FROM suggestions WHERE id = ? AND guild = ?", (s_id, interaction.guild.id))
                 data = await cursor.fetchone()
                 if data:
 
@@ -342,73 +372,88 @@ class Delete(ui.Modal):
                     suggestion = data[2]
                     msg_id = data[3]
                     log_id = data[4]
+                    status = data[5]
 
-                        #* Suggestion messaage #
+                    if status == "waiting":
 
-                    suggestmsg = interaction.client.get_channel(suggest_channel)
-                    sugg_msg = await suggestmsg.fetch_message(msg_id)
+                            #* Suggestion messaage #
 
-                    await sugg_msg.delete()
+                        suggestmsg = interaction.client.get_channel(suggest_channel)
+                        sugg_msg = await suggestmsg.fetch_message(msg_id)
 
-                        #* Log message #
+                        await sugg_msg.delete()
 
-                    delete = discord.Embed(
-                        title = "Suggestion log",
-                        description = f"Suggestion log of <@{author}>",
-                        color = discord.Color.dark_blue(),
-                        timestamp = datetime.datetime.utcnow()
-                    )
-                    delete.add_field(
-                        name = ":id: - Suggestion ID:",
-                        value = f"```{s_id}```",
-                        inline = False
-                    )
-                    delete.add_field(
-                        name = ":pencil: - Name of suggetion:",
-                        value = title,
-                        inline = False
-                    )
-                    delete.add_field(
-                        name = ":bulb: - Suggestion:",
-                        value = suggestion,
-                        inline = False
-                    )
-                    delete.add_field(
-                        name = f"{trashcanemoji} - Deleted:",
-                        value = f"This suggestion has been deleted by {interaction.user.mention}!",
-                        inline = False
-                    )
-                    if mod_comment:
+                            #* Log message #
+
+                        delete = discord.Embed(
+                            title = "Suggestion log",
+                            description = f"Suggestion log of <@{author}>",
+                            color = discord.Color.dark_blue(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
                         delete.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = mod_comment,
+                            name = ":id: - Suggestion ID:",
+                            value = f"```{s_id}```",
                             inline = False
                         )
+                        delete.add_field(
+                            name = ":pencil: - Name of suggetion:",
+                            value = title,
+                            inline = False
+                        )
+                        delete.add_field(
+                            name = ":bulb: - Suggestion:",
+                            value = suggestion,
+                            inline = False
+                        )
+                        delete.add_field(
+                            name = f"{trashcanemoji} - Deleted:",
+                            value = f"This suggestion has been deleted by {interaction.user.mention}!",
+                            inline = False
+                        )
+                        if mod_comment:
+                            delete.add_field(
+                                name = f":speech_balloon: - Mod comment:",
+                                value = mod_comment,
+                                inline = False
+                            )
+                        else:
+                            delete.add_field(
+                                name = f":speech_balloon: - Mod comment:",
+                                value = "-",
+                                inline = False
+                            )
+                        delete.set_thumbnail(url = trashcanemojilink)
+
+                        suggestlog = interaction.client.get_channel(approval_channel)
+                        log_msg = await suggestlog.fetch_message(log_id)
+                        
+                        await log_msg.edit(embed = delete, view = ApprovalSystemDisabled(sugg_msg.jump_url))
+
+                        await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("deleted", interaction.user.id, mod_comment, s_id, interaction.guild.id))
+
+                            #* Confirm message #
+                        
+                        embed = discord.Embed(
+                            title = f"Suggestion deleted!",
+                            description = f"Suggestion with ID {s_id} has been deleted.",
+                            color = discord.Color.dark_blue(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
+                        embed.set_thumbnail(url = yesemojilink)
+                        await interaction.response.send_message(embed = embed, ephemeral = True)
+
+                        #* Already approved/denied/deleted #
+                    
                     else:
-                        delete.add_field(
-                            name = f":speech_balloon: - Mod comment:",
-                            value = "-",
-                            inline = False
+                        embed = discord.Embed(
+                            title = f"Suggestion delete",
+                            description = f"Cannot delete suggestion **{s_id}**, suggestion is already {status}.",
+                            color = discord.Color.red(),
+                            timestamp = datetime.datetime.utcnow()
                         )
-                    delete.set_thumbnail(url = trashcanemojilink)
-
-                    suggestlog = interaction.client.get_channel(approval_channel)
-                    log_msg = await suggestlog.fetch_message(log_id)
-                    
-                    await log_msg.edit(embed = delete, view = ApprovalSystemDisabled(sugg_msg.jump_url))
-
-                    await cursor.execute("UPDATE suggestions SET status = ?, mod = ?, mod_comment = ? WHERE id = ? AND guild = ?", ("Deleted", interaction.user.id, mod_comment, s_id, interaction.guild.id))
-
-                        #* Confirm message #
-                    
-                    embed = discord.Embed(
-                        title = f"Suggestion deleted!",
-                        description = f"Suggestion with ID {s_id} has been deleted.",
-                        color = discord.Color.dark_blue(),
-                        timestamp = datetime.datetime.utcnow()
-                    )
-                    embed.set_thumbnail(url = yesemojilink)
-                    await interaction.response.send_message(embed = embed, ephemeral = True)
+                        embed.set_thumbnail(url = noemojilink)
+                        await interaction.response.send_message(embed = embed, ephemeral = True)
 
                 else:
 
@@ -516,7 +561,7 @@ class suggest(commands.Cog):
         await suggmsg.add_reaction(noemoji)
 
         async with self.db.cursor() as cursor:
-            await cursor.execute("INSERT INTO suggestions (author, title, suggestion, status, msg_id, guild) VALUES (?, ?, ?, ?, ?, ?)", (author.id, title, suggestion, "Waiting..", suggmsg.id, interaction.guild.id))
+            await cursor.execute("INSERT INTO suggestions (author, title, suggestion, status, msg_id, guild) VALUES (?, ?, ?, ?, ?, ?)", (author.id, title, suggestion, "waiting", suggmsg.id, interaction.guild.id))
         await self.db.commit()
 
         async with self.db.cursor() as cursor:
