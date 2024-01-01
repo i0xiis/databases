@@ -31,7 +31,21 @@ class Approve(ui.Modal):
 
         sugg_id = self.sugg_id.value
         mod_comment = self.mod_comment.value
-        s_id = int(sugg_id)
+
+            #* Convert id to int #
+        
+        try:
+            s_id = int(sugg_id)
+        except:
+            embed = discord.Embed(
+                title = f"ID is not a number",
+                description = f"{sugg_id} is not a nuber..",
+                color = discord.Color.red(),
+                timestamp = datetime.datetime.utcnow()
+            )
+            embed.set_thumbnail(url = noemojilink)
+            await interaction.response.send_message(embed = embed, ephemeral = True)
+            return
 
             #* Database connection #
 
