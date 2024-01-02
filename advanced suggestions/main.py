@@ -6,7 +6,9 @@ from colorama import Back, Fore, Style
 
 from suggestion_system.views.approval_system import ApprovalSystem
 
-command_list = ["suggestion_system.suggest"]
+command_list = ["suggestion_system.suggest",
+                "suggestion_system.sugg_channel",
+                "suggestion_system.log_channel"]
 
 class Client(commands.Bot):
   def __init__(self):

@@ -49,7 +49,7 @@ class Delete(ui.Modal):
 
             #* Database connection #
 
-        async with aiosqlite.connect("suggestions.db") as db:
+        async with aiosqlite.connect("main.db") as db:
             async with db.cursor() as cursor:
                 await cursor.execute("SELECT author, title, suggestion, msg_id, log_id, status FROM suggestions WHERE id = ? AND guild = ?", (s_id, interaction.guild.id))
                 data = await cursor.fetchone()

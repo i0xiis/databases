@@ -23,7 +23,7 @@ class suggest(commands.Cog):
         #* Database connection #
 
     async def connect_db(self):
-        self.db = await aiosqlite.connect("suggestions.db")
+        self.db = await aiosqlite.connect("main.db")
         async with self.db.cursor() as cursor:
             await cursor.execute("CREATE TABLE IF NOT EXISTS suggestions (id INTEGER PRIMARY KEY AUTOINCREMENT, author INTEGER, title TEXT, suggestion TEXT, status TEXT, msg_id INTEGER, log_id INTEGER, mod INTEGER, mod_comment TEXT, guild INTEGER)")
         await self.db.commit()

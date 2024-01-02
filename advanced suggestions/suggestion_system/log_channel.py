@@ -10,7 +10,7 @@ from config import noemoji
 from config import yesemoji
 from config import yesemojilink
 
-class sugg_channel(commands.Cog):
+class log_channel(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
@@ -30,13 +30,13 @@ class sugg_channel(commands.Cog):
 
         #* Suggest channel command #
 
-    @app_commands.command(name = "sugg_channel", description = "Sets a suggestion channel.")
+    @app_commands.command(name = "log_channel", description = "Sets a log channel.")
     @app_commands.checks.has_role(1154457410677788732)
-    async def sugg_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+    async def log_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
 
         async with aiosqlite.connect("main.db") as db:
             async with db.cursor() as cursor:
-                await cursor.execute("SELECT sugg_channel FROM channels WHERE guild = ?", (interaction.guild.id,))
+                await cursor.execute("SELECT log_channel FROM channels WHERE guild = ?", (interaction.guild.id,))
                 data = await cursor.fetchone()
                 if data:
 
@@ -46,8 +46,8 @@ class sugg_channel(commands.Cog):
 
                         if current_channel == channel.id:
                             embed = discord.Embed(
-                                title = "Suggestion channel setup",
-                                description = f"This channel is already set up as suggestion channel!",
+                                title = "Log channel setup",
+                                description = f"This channel is already set up as log channel!",
                                 color = discord.Color.yellow(),
                                 timestamp = datetime.datetime.utcnow()
                             )
@@ -58,11 +58,11 @@ class sugg_channel(commands.Cog):
                             await interaction.response.send_message(embed = embed)
 
                         else:
-                            await cursor.execute("UPDATE channels SET sugg_channel = ? WHERE guild = ?", (channel.id, interaction.guild.id))
+                            await cursor.execute("UPDATE channels SET log_channel = ? WHERE guild = ?", (channel.id, interaction.guild.id))
 
                             embed = discord.Embed(
-                                title = "Suggestion channel setup",
-                                description = f"Suggestion channel has been updated!",
+                                title = "Log channel setup",
+                                description = f"Log channel has been updated!",
                                 color = discord.Color.orange(),
                                 timestamp = datetime.datetime.utcnow()
                             )
@@ -78,11 +78,11 @@ class sugg_channel(commands.Cog):
                             await interaction.response.send_message(embed = embed)
                         
                     else:
-                        await cursor.execute("UPDATE channels SET sugg_channel = ? WHERE guild = ?", (channel.id, interaction.guild.id))
+                        await cursor.execute("UPDATE channels SET log_channel = ? WHERE guild = ?", (channel.id, interaction.guild.id))
 
                         embed = discord.Embed(
-                            title = "Suggestion channel setup",
-                            description = f"Suggestion channel has been set up!",
+                            title = "Log channel setup",
+                            description = f"Log channel has been set up!",
                             color = discord.Color.dark_green(),
                             timestamp = datetime.datetime.utcnow()
                         )
@@ -94,11 +94,11 @@ class sugg_channel(commands.Cog):
                         await interaction.response.send_message(embed = embed)
                 
                 else:
-                    await cursor.execute("INSERT INTO channels (sugg_channel, guild) VALUES (?, ?)", (channel.id, interaction.guild.id,))
+                    await cursor.execute("INSERT INTO channels (log_channel, guild) VALUES (?, ?)", (channel.id, interaction.guild.id,))
 
                     embed = discord.Embed(
-                        title = "Suggestion channel setup",
-                        description = f"Suggestion channel has been set up!",
+                        title = "Log channel setup",
+                        description = f"Log channel has been set up!",
                         color = discord.Color.dark_green(),
                         timestamp = datetime.datetime.utcnow()
                     )
@@ -113,8 +113,8 @@ class sugg_channel(commands.Cog):
 
         #* Error handling #
 
-    @sugg_channel.error
-    async def on_sugg_channel_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+    @log_channel.error
+    async def on_log_channel_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
 
             #* Missing permissions #
         
@@ -154,4 +154,4 @@ class sugg_channel(commands.Cog):
 
 
 async def setup(client: commands.Bot) -> None:
-   await client.add_cog(sugg_channel(client))
+   await client.add_cog(log_channel(client))
