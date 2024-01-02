@@ -39,6 +39,8 @@ class suggest(commands.Cog):
 
         author = interaction.user
 
+            #* Getting channels #
+
         async with aiosqlite.connect("main.db") as datadb:
             async with datadb.cursor() as datacursor:
                 await datacursor.execute("SELECT sugg_channel, log_channel FROM channels WHERE guild = ?", (interaction.guild.id,))
@@ -47,6 +49,8 @@ class suggest(commands.Cog):
                     
                     sugg_channel = data[0]
                     log_channel = data[1]
+
+                        #* Checking if channels exists #
 
                     if sugg_channel == None:
                         embed = discord.Embed(
@@ -75,6 +79,8 @@ class suggest(commands.Cog):
                         await interaction.response.send_message(embed = embed)
 
                     else:
+                        
+                            #* Posting a suggestion #
 
                         suggest = self.client.get_channel(sugg_channel)
                         suggestlog = self.client.get_channel(log_channel)
@@ -154,6 +160,9 @@ class suggest(commands.Cog):
                         await self.db.commit()
 
                 else:
+
+                    #* Channel setup required #
+
                     embed = discord.Embed(
                         title = "Channel setup required",
                         description = f"Oops... it looks like you have neither suggestion channel or log channel set up.\nIf you want to use my suggestion system you have to set up these channels!",
