@@ -104,7 +104,13 @@ class sugg_channel(commands.Cog):
                     )
                     embed.add_field(
                         name = f"{yesemoji} - Current channel:",
-                        value = f"<#{channel.id}>"
+                        value = f"<#{channel.id}>",
+                        inline = False
+                    )
+                    embed.add_field(
+                        name = f":white_check_mark: - Log channel setup:",
+                        value = f"</log_channel:1191540158961553461>",
+                        inline = False
                     )
                     embed.set_thumbnail(url = yesemojilink)
                     await interaction.response.send_message(embed = embed)

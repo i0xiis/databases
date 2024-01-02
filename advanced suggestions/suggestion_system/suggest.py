@@ -4,8 +4,6 @@ import aiosqlite
 from discord.ext import commands
 from discord import app_commands
 
-from config import suggest_channel
-from config import approval_channel
 from config import tickets_channel_clv
 
 from config import noemoji
@@ -41,80 +39,136 @@ class suggest(commands.Cog):
 
         author = interaction.user
 
-        suggest = self.client.get_channel(suggest_channel)
-        suggestlog = self.client.get_channel(approval_channel)
+        async with aiosqlite.connect("main.db") as datadb:
+            async with datadb.cursor() as datacursor:
+                await datacursor.execute("SELECT sugg_channel, log_channel FROM channels WHERE guild = ?", (interaction.guild.id,))
+                data = await datacursor.fetchone()
+                if data:
+                    
+                    sugg_channel = data[0]
+                    log_channel = data[1]
 
-        await interaction.response.send_message(content = f"Suggestion called **{title}** has been posted!")
+                    if sugg_channel == None:
+                        embed = discord.Embed(
+                            title = "Suggestion channel setup required",
+                            description = f"Oops.. it looks like you don´t have suggestion channel set up. If you want to use my suggestion system you have to set up this channel!",
+                            color = discord.Color.yellow(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
+                        embed.add_field(
+                            name = f":bulb: - Suggestion channel setup:",
+                            value = f"</sugg_channel:1191528114208124951>"
+                        )
+                        await interaction.response.send_message(embed = embed)
 
-            #* Suggestion message #
+                    elif log_channel == None:
+                        embed = discord.Embed(
+                            title = "Log channel setup required",
+                            description = f"Oops.. it looks like you don´t have log channel set up. If you want to use my suggestion system you have to set up this channel!",
+                            color = discord.Color.yellow(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
+                        embed.add_field(
+                            name = f":white_check_mark: - Log channel setup:",
+                            value = f"</log_channel:1191540158961553461>"
+                        )
+                        await interaction.response.send_message(embed = embed)
 
-        suggEmbed = discord.Embed(
-            title = "Suggestion",
-            description = f"*Here is a suggestion from user {author.mention}:*",
-            color = discord.Color.yellow(),
-            timestamp = datetime.datetime.utcnow()
-        )
-        suggEmbed.add_field(
-            name = ":pencil: - Name of suggetion:",
-            value = title,
-            inline = False
-        )
-        suggEmbed.add_field(
-            name = ":bulb: - Suggestion:",
-            value = suggestion,
-            inline = False
-        )
-        suggEmbed.set_thumbnail(url = wingman_siplink)
+                    else:
 
-        suggmsg = await suggest.send(embed = suggEmbed)
-        await suggmsg.add_reaction(yesemoji)
-        await suggmsg.add_reaction(noemoji)
+                        suggest = self.client.get_channel(sugg_channel)
+                        suggestlog = self.client.get_channel(log_channel)
 
-            #* Inserting data #
+                        await interaction.response.send_message(content = f"Suggestion called **{title}** has been posted!")
 
-        async with self.db.cursor() as cursor:
-            await cursor.execute("INSERT INTO suggestions (author, title, suggestion, status, msg_id, guild) VALUES (?, ?, ?, ?, ?, ?)", (author.id, title, suggestion, "waiting", suggmsg.id, interaction.guild.id))
-        await self.db.commit()
+                            #* Suggestion message #
 
-        async with self.db.cursor() as cursor:
-            await cursor.execute("SELECT id FROM suggestions WHERE msg_id = ? AND guild = ?", (suggmsg.id, interaction.guild.id))
-            data = await cursor.fetchone()
-            if data:
-                s_id = data[0]
+                        suggEmbed = discord.Embed(
+                            title = "Suggestion",
+                            description = f"*Here is a suggestion from user {author.mention}:*",
+                            color = discord.Color.yellow(),
+                            timestamp = datetime.datetime.utcnow()
+                        )
+                        suggEmbed.add_field(
+                            name = ":pencil: - Name of suggetion:",
+                            value = title,
+                            inline = False
+                        )
+                        suggEmbed.add_field(
+                            name = ":bulb: - Suggestion:",
+                            value = suggestion,
+                            inline = False
+                        )
+                        suggEmbed.set_thumbnail(url = wingman_siplink)
 
-                    #* Log message #
+                        suggmsg = await suggest.send(embed = suggEmbed)
+                        await suggmsg.add_reaction(yesemoji)
+                        await suggmsg.add_reaction(noemoji)
 
-                approval = discord.Embed(
-                    title = "Suggestion log",
-                    description = f"Suggestion log of {author.mention}",
-                    color = discord.Color.yellow(),
-                    timestamp = datetime.datetime.utcnow()
-                )
-                approval.add_field(
-                    name = ":id: - Suggestion ID:",
-                    value = f"```{s_id}```",
-                    inline = False
-                )
-                approval.add_field(
-                    name = ":pencil: - Name of suggetion:",
-                    value = title,
-                    inline = False
-                )
-                approval.add_field(
-                    name = ":bulb: - Suggestion:",
-                    value = suggestion,
-                    inline = False
-                )
-                approval.set_thumbnail(url = wingman_siplink)
+                            #* Inserting data #
 
-                logmsg = await suggestlog.send(embed = approval, view = ApprovalSystem(suggmsg.jump_url))
+                        async with self.db.cursor() as cursor:
+                            await cursor.execute("INSERT INTO suggestions (author, title, suggestion, status, msg_id, guild) VALUES (?, ?, ?, ?, ?, ?)", (author.id, title, suggestion, "waiting", suggmsg.id, interaction.guild.id))
+                        await self.db.commit()
 
-                await cursor.execute("UPDATE suggestions SET log_id = ? WHERE id = ? AND guild = ?", (logmsg.id, s_id, interaction.guild.id))
+                            #* Getting data for log message #
 
-            else:
-                return
-            
-            await self.db.commit()
+                        async with self.db.cursor() as cursor:
+                            await cursor.execute("SELECT id FROM suggestions WHERE msg_id = ? AND guild = ?", (suggmsg.id, interaction.guild.id))
+                            data = await cursor.fetchone()
+                            if data:
+                                s_id = data[0]
+
+                                    #* Log message #
+
+                                approval = discord.Embed(
+                                    title = "Suggestion log",
+                                    description = f"Suggestion log of {author.mention}",
+                                    color = discord.Color.yellow(),
+                                    timestamp = datetime.datetime.utcnow()
+                                )
+                                approval.add_field(
+                                    name = ":id: - Suggestion ID:",
+                                    value = f"```{s_id}```",
+                                    inline = False
+                                )
+                                approval.add_field(
+                                    name = ":pencil: - Name of suggetion:",
+                                    value = title,
+                                    inline = False
+                                )
+                                approval.add_field(
+                                    name = ":bulb: - Suggestion:",
+                                    value = suggestion,
+                                    inline = False
+                                )
+                                approval.set_thumbnail(url = wingman_siplink)
+
+                                logmsg = await suggestlog.send(embed = approval, view = ApprovalSystem(suggmsg.jump_url))
+
+                                await cursor.execute("UPDATE suggestions SET log_id = ? WHERE id = ? AND guild = ?", (logmsg.id, s_id, interaction.guild.id))
+
+                            else:
+                                return
+                            
+                        await self.db.commit()
+
+                else:
+                    embed = discord.Embed(
+                        title = "Channel setup required",
+                        description = f"Oops... it looks like you have neither suggestion channel or log channel set up.\nIf you want to use my suggestion system you have to set up these channels!",
+                        color = discord.Color.yellow(),
+                        timestamp = datetime.datetime.utcnow()
+                    )
+                    embed.add_field(
+                        name = f":bulb: - Suggestion channel setup:",
+                        value = f"</sugg_channel:1191528114208124951>"
+                    )
+                    embed.add_field(
+                        name = f":white_check_mark: - Log channel setup:",
+                        value = f"</log_channel:1191540158961553461>"
+                    )
+                    await interaction.response.send_message(embed = embed)
 
         #* Error handling #
 
